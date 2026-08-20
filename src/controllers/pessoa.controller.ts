@@ -3,6 +3,8 @@ import { PessoaService } from "../services/pessoa.service";
 import bcrypt from 'bcryptjs';
 import { LoginRepository } from "../repository/LoginRepository";
 import { JwtService } from "../utils/JwtService";
+import axios from "axios";
+
 
 export class PessoaController {
     // constructor(private _service = new PessoaService()) { }
@@ -216,28 +218,99 @@ export class PessoaController {
             });
         }
 
+        const tiposValidos = ["CLIENTE", "ORGANIZACAO"];
+
         if (
             !tipo ||
             typeof tipo !== "string" ||
-            tipo.trim() === ""
+            !tiposValidos.includes(tipo.toUpperCase().trim())
         ) {
             return res.status(400).json({
                 message: "Tipo inválido"
             });
         }
 
-        const tiposValidos = [
-            "CLIENTE",
-            "ORGANIZACAO"
-        ];
+        const tipoFormatado = tipo.toUpperCase().trim();
 
-        const tipoFormatado = tipo.toUpperCase();
+        // =========================
+        // ENDEREÇO
+        // =========================
 
-        if (!tiposValidos.includes(tipoFormatado)) {
+        if (!infoExtra.cep || !infoExtra.numero) {
             return res.status(400).json({
-                message: "Tipo inválido"
+                message: "CEP e número são obrigatórios"
             });
         }
+
+        const cep = String(infoExtra.cep).replace(/\D/g, "");
+
+        if (!/^\d{8}$/.test(cep)) {
+            return res.status(400).json({
+                message: "CEP inválido"
+            });
+        }
+
+        try {
+            const response = await axios.get(
+                `https://viacep.com.br/ws/${cep}/json/`
+            );
+
+            const endereco = response.data;
+
+            if (endereco.erro) {
+                return res.status(400).json({
+                    message: "CEP não encontrado"
+                });
+            }
+
+            infoExtra.cep = cep;
+            infoExtra.rua = endereco.logradouro;
+            infoExtra.bairro = endereco.bairro;
+            infoExtra.municipio = endereco.localidade;
+            infoExtra.uf = endereco.uf;
+
+        } catch (error) {
+            console.error("Erro ao consultar CEP:", error);
+
+            return res.status(502).json({
+                message: "Não foi possível consultar o CEP"
+            });
+        }
+
+        //api CEP, preciso mandar as informaç~esa
+
+        // =========================
+        // EMAIL E TELEFONE
+        // =========================
+
+        if (!infoExtra.email || !infoExtra.telefone) {
+            return res.status(400).json({
+                message: "E-mail e telefone são obrigatórios"
+            });
+        }
+
+        // Limpa caracteres do telefone
+        const telefone = String(infoExtra.telefone).replace(/\D/g, "");
+
+        // Telefone com DDD: 10 ou 11 dígitos
+        if (!/^\d{10,11}$/.test(telefone)) {
+            return res.status(400).json({
+                message: "Telefone inválido"
+            });
+        }
+
+        // Validação básica do e-mail
+        const email = String(infoExtra.email).trim().toLowerCase();
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({
+                message: "E-mail inválido"
+            });
+        }
+
+        infoExtra.telefone = telefone;
+        infoExtra.email = email;
+
 
         // =========================
         // USERNAME E SENHA

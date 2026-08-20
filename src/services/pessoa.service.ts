@@ -82,6 +82,11 @@ export class PessoaService {
         return await this._repository.create(pessoa, infoExtra);
     }
 
+    // async login(username: string, password: string, infoExtra: any) {
+    //     const login = Pessoa.criar(username, password);
+    //     return await this._repository.create(login, password);
+    // }
+
     async editar(id: number, nome: string, infoExtra: any) {
         const pessoa = Pessoa.editar(nome, id);
         return await this._repository.update(pessoa, infoExtra)
