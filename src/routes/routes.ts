@@ -8,9 +8,11 @@ import favoritoRoutes from "./favorito.routes";
 import likeRoutes from "./like.routes";
 import pessoaRoutes from "./pessoa.routes";
 import postRoutes from "./post.routes";
+import authRoutes from "./AuthRoutes";
 
 
 const router = Router();
+router.use("/", authRoutes);
 
 router.use('/', areaAtuacaoRoutes);
 router.use('/', avaliacaoRoutes);
