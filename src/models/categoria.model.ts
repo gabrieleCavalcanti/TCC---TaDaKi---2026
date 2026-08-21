@@ -10,8 +10,6 @@ export class Categoria {
     constructor(descricao: string, id_categoria?: number) {
         this._descricao = descricao;
         this._id_categoria = id_categoria;
-
-
     }
 
     public get id_categoria(): number | undefined { return this._id_categoria; }

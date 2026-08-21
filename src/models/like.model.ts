@@ -22,17 +22,9 @@ export class Like {
         this._data = data || new Date();
     }
 
-    public get id_post(): number {
-        return this._id_post;
-    }
-
-    public get id_pessoa(): number {
-        return this._id_pessoa;
-    }
-
-    public get data(): Date | undefined {
-        return this._data;
-    }
+    public get id_post(): number { return this._id_post;}
+    public get id_pessoa(): number {return this._id_pessoa;}
+    public get data(): Date | undefined { return this._data;}
 
     public static criar(
         id_post: number,

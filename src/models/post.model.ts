@@ -37,33 +37,13 @@ export class Post {
         this._id_organizacao = id_organizacao;
     }
 
-    public get id_post(): number | undefined {
-        return this._id_post;
-    }
-
-    public get vincularImagem(): string {
-        return this._vincularImagem;
-    }
-
-    public get titulo(): string {
-        return this._titulo;
-    }
-
-    public get descricao(): string {
-        return this._descricao;
-    }
-
-    public get id_categoria(): number {
-        return this._id_categoria;
-    }
-
-    public get status(): string {
-        return this._status;
-    }
-
-    public get id_organizacao(): number {
-        return this._id_organizacao;
-    }
+    public get id_post(): number | undefined {return this._id_post;}
+    public get vincularImagem(): string {return this._vincularImagem;}
+    public get titulo(): string { return this._titulo;}
+    public get descricao(): string { return this._descricao;}
+    public get id_categoria(): number {return this._id_categoria;}
+    public get status(): string {return this._status;}
+    public get id_organizacao(): number {return this._id_organizacao;}
 
     public static criar(
         vincularImagem: string,
@@ -96,11 +76,9 @@ export class Post {
         if (!id_post || id_post <= 0) {
             throw new Error("ID do post inválido");
         }
-
         if (!id_categoria || id_categoria <= 0) {
             throw new Error("ID da categoria inválido");
         }
-
         if (!id_organizacao || id_organizacao <= 0) {
             throw new Error("ID da organização inválido");
         }
