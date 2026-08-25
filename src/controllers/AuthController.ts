@@ -5,415 +5,253 @@ import { LoginRepository } from "../repository/LoginRepository";
 import { JwtService } from "../utils/JwtService";
 
 const COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax" as const
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
 };
 
 export class AuthController {
+  private loginRepo: LoginRepository;
+  private jwtService: JwtService;
+  private bcryptRounds: number;
 
-    private loginRepo: LoginRepository;
-    private jwtService: JwtService;
-    private bcryptRounds: number;
+  constructor() {
+    this.loginRepo = new LoginRepository();
+    this.jwtService = new JwtService();
+    this.bcryptRounds = Number(process.env.BCRYPT_ROUNDS) || 10;
+  }
 
-    constructor() {
-        this.loginRepo = new LoginRepository();
-        this.jwtService = new JwtService();
-        this.bcryptRounds = Number(process.env.BCRYPT_ROUNDS) || 10;
+  // =========================
+  // LOGIN
+  // =========================
+
+  login = async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      console.log(username, password);
+
+      // Validação do username
+      if (!username || typeof username !== "string" || username.trim() === "") {
+        return res.status(400).json({
+          message: "Username é obrigatório",
+        });
+      }
+
+      // Validação da senha
+      if (!password || typeof password !== "string") {
+        return res.status(400).json({
+          message: "Senha é obrigatória",
+        });
+      }
+
+      // Procura usuário
+      const user = await this.loginRepo.findByUsername(username.trim());
+
+      if (!user) {
+        return res.status(401).json({
+          message: "Credenciais inválidas",
+        });
+      }
+
+      // Verifica senha
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+
+      if (!passwordMatch) {
+        return res.status(401).json({
+          message: "Credenciais inválidas",
+        });
+      }
+
+      // Dados que serão colocados no JWT
+      const payload = {
+        login_id: user.id_pessoa_login!,
+        username: user.username,
+      };
+
+      // Gera Access Token
+      const accessToken = this.jwtService.gerarTokenAcesso(payload);
+
+      // Gera Refresh Token
+      const refreshToken = this.jwtService.gerarRefreshToken(payload);
+
+      // Salva Access Token no cookie
+      res.cookie("accessToken", accessToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: 15 * 60 * 1000,
+      });
+
+      // Salva Refresh Token no cookie
+      res.cookie("refreshToken", refreshToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      // Não devolvemos os tokens no JSON
+      return res.status(200).json({
+        message: "Login realizado com sucesso",
+
+        user: {
+          id_pessoa_login: user.id_pessoa_login,
+          username: user.username,
+        },
+
+        token_acesso: accessToken,
+        refresh_token: refreshToken,
+      });
+    } catch (error: unknown) {
+      console.error(error);
+
+      if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Ocorreu um erro no servidor",
+          errorMessage: error.message,
+        });
+      }
+
+      return res.status(500).json({
+        message: "Ocorreu um erro no servidor",
+        errorMessage: "Erro desconhecido",
+      });
     }
+  };
 
-    // =========================
-    // LOGIN
-    // =========================
+  // =========================
+  // ME
+  // =========================
 
-    login = async (req: Request, res: Response) => {
-        try {
+  me = async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          message: "Usuário não autenticado",
+        });
+      }
 
-            const { username, password } = req.body;
+      const user = await this.loginRepo.findById(req.user.id_login);
 
-            // Validação do username
-            if (
-                !username ||
-                typeof username !== "string" ||
-                username.trim() === ""
-            ) {
-                return res.status(400).json({
-                    message: "Username é obrigatório"
-                });
-            }
+      if (!user) {
+        return res.status(404).json({
+          message: "Usuário não encontrado",
+        });
+      }
 
-            // Validação da senha
-            if (
-                !password ||
-                typeof password !== "string"
-            ) {
-                return res.status(400).json({
-                    message: "Senha é obrigatória"
-                });
-            }
+      return res.status(200).json({
+        message: "Usuário encontrado",
+        user: {
+          id_pessoa_login: user.id_pessoa_login,
+          username: user.username,
+        },
+      });
+    } catch (error: unknown) {
+      console.error(error);
 
-            // Procura usuário
-            const user = await this.loginRepo.findByUsername(
-                username.trim()
-            );
+      if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Ocorreu um erro no servidor",
+          errorMessage: error.message,
+        });
+      }
 
-            if (!user) {
-                return res.status(401).json({
-                    message: "Credenciais inválidas"
-                });
-            }
+      return res.status(500).json({
+        message: "Ocorreu um erro no servidor",
+        errorMessage: "Erro desconhecido",
+      });
+    }
+  };
 
-            // Verifica senha
-            const passwordMatch = await bcrypt.compare(
-                password,
-                user.password_hash
-            );
+  // =========================
+  // REFRESH
+  // =========================
 
-            if (!passwordMatch) {
-                return res.status(401).json({
-                    message: "Credenciais inválidas"
-                });
-            }
+  refresh = async (req: Request, res: Response) => {
+    try {
+      // Primeiro tenta pegar o cookie
+      const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-            // Dados que serão colocados no JWT
-            const payload = {
-                login_id: user.id_pessoa_login!,
-                username: user.username
-            };
+      if (!refreshToken) {
+        return res.status(401).json({
+          message: "Refresh token não informado",
+        });
+      }
 
-            // Gera Access Token
-            const accessToken =
-                this.jwtService.gerarTokenAcesso(payload);
+      // Verifica o Refresh Token
+      const dados = this.jwtService.verificarRefreshToken(refreshToken);
 
-            // Gera Refresh Token
-            const refreshToken =
-                this.jwtService.gerarRefreshToken(payload);
+      const payload = {
+        login_id: dados.login_id,
+        username: dados.username,
+      };
 
-            // Salva Access Token no cookie
-            res.cookie(
-                "accessToken",
-                accessToken,
-                {
-                    ...COOKIE_OPTIONS,
-                    maxAge: 15 * 60 * 1000
-                }
-            );
+      // Gera novo Access Token
+      const accessToken = this.jwtService.gerarTokenAcesso(payload);
 
-            // Salva Refresh Token no cookie
-            res.cookie(
-                "refreshToken",
-                refreshToken,
-                {
-                    ...COOKIE_OPTIONS,
-                    maxAge: 7 * 24 * 60 * 60 * 1000
-                }
-            );
+      // Atualiza o cookie do Access Token
+      res.cookie("accessToken", accessToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: 15 * 60 * 1000,
+      });
 
-            // Não devolvemos os tokens no JSON
-            return res.status(200).json({
-                message: "Login realizado com sucesso",
+      return res.status(200).json({
+        message: "Token atualizado com sucesso",
+      });
+    } catch (error) {
+      console.error(error);
 
-                user: {
-                    id_pessoa_login: user.id_pessoa_login,
-                    username: user.username
-                },
+      return res.status(401).json({
+        message: "Refresh token inválido ou expirado",
+      });
+    }
+  };
 
-                token_acesso: accessToken,
-                refresh_token: refreshToken
-            });
+  // =========================
+  // LOGOUT
+  // =========================
 
-        } catch (error: unknown) {
+  logout = async (req: Request, res: Response) => {
+    try {
+      // Remove os cookies
+      res.clearCookie("accessToken", COOKIE_OPTIONS);
 
-            console.error(error);
+      res.clearCookie("refreshToken", COOKIE_OPTIONS);
 
-            if (error instanceof Error) {
-                return res.status(500).json({
-                    message: "Ocorreu um erro no servidor",
-                    errorMessage: error.message
-                });
-            }
+      return res.status(200).json({
+        message: "Logout realizado com sucesso",
+      });
+    } catch (error) {
+      console.error(error);
 
-            return res.status(500).json({
-                message: "Ocorreu um erro no servidor",
-                errorMessage: "Erro desconhecido"
-            });
-        }
-    };
+      return res.status(500).json({
+        message: "Erro ao realizar logout",
+      });
+    }
+  };
 
+  // =========================
+  // ROTA PROTEGIDA
+  // =========================
 
-    // =========================
-    // ME
-    // =========================
+  rotaProtegida = async (req: Request, res: Response) => {
+    try {
+      return res.status(200).json({
+        message: "Você acessou um recurso protegido",
+      });
+    } catch (error: unknown) {
+      console.error(error);
 
-    me = async (req: Request, res: Response) => {
-        try {
+      if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Ocorreu um erro no servidor",
+          errorMessage: error.message,
+        });
+      }
 
-            if (!req.user) {
-                return res.status(401).json({
-                    message: "Usuário não autenticado"
-                });
-            }
-
-            const user = await this.loginRepo.findById(
-                req.user.id_login
-            );
-
-            if (!user) {
-                return res.status(404).json({
-                    message: "Usuário não encontrado"
-                });
-            }
-
-            return res.status(200).json({
-                message: "Usuário encontrado",
-                user: {
-                    id_pessoa_login: user.id_pessoa_login,
-                    username: user.username
-                }
-            });
-
-        } catch (error: unknown) {
-
-            console.error(error);
-
-            if (error instanceof Error) {
-                return res.status(500).json({
-                    message: "Ocorreu um erro no servidor",
-                    errorMessage: error.message
-                });
-            }
-
-            return res.status(500).json({
-                message: "Ocorreu um erro no servidor",
-                errorMessage: "Erro desconhecido"
-            });
-        }
-    };
-
-
-    // =========================
-    // REFRESH
-    // =========================
-
-    refresh = async (req: Request, res: Response) => {
-        try {
-
-            // Primeiro tenta pegar o cookie
-            const refreshToken =
-                req.cookies?.refreshToken ||
-                req.body?.refreshToken;
-
-            if (!refreshToken) {
-                return res.status(401).json({
-                    message: "Refresh token não informado"
-                });
-            }
-
-            // Verifica o Refresh Token
-            const dados =
-                this.jwtService.verificarRefreshToken(
-                    refreshToken
-                );
-
-            const payload = {
-                login_id: dados.login_id,
-                username: dados.username
-            };
-
-            // Gera novo Access Token
-            const accessToken =
-                this.jwtService.gerarTokenAcesso(payload);
-
-            // Atualiza o cookie do Access Token
-            res.cookie(
-                "accessToken",
-                accessToken,
-                {
-                    ...COOKIE_OPTIONS,
-                    maxAge: 15 * 60 * 1000
-                }
-            );
-
-            return res.status(200).json({
-                message: "Token atualizado com sucesso"
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            return res.status(401).json({
-                message: "Refresh token inválido ou expirado"
-            });
-        }
-    };
-
-
-    // =========================
-    // LOGOUT
-    // =========================
-
-    logout = async (req: Request, res: Response) => {
-        try {
-
-            // Remove os cookies
-            res.clearCookie(
-                "accessToken",
-                COOKIE_OPTIONS
-            );
-
-            res.clearCookie(
-                "refreshToken",
-                COOKIE_OPTIONS
-            );
-
-            return res.status(200).json({
-                message: "Logout realizado com sucesso"
-            });
-
-        } catch (error) {
-
-            console.error(error);
-
-            return res.status(500).json({
-                message: "Erro ao realizar logout"
-            });
-        }
-    };
-
-
-    // =========================
-    // ROTA PROTEGIDA
-    // =========================
-
-    rotaProtegida = async (
-        req: Request,
-        res: Response
-    ) => {
-
-        try {
-
-            return res.status(200).json({
-                message: "Você acessou um recurso protegido"
-            });
-
-        } catch (error: unknown) {
-
-            console.error(error);
-
-            if (error instanceof Error) {
-                return res.status(500).json({
-                    message: "Ocorreu um erro no servidor",
-                    errorMessage: error.message
-                });
-            }
-
-            return res.status(500).json({
-                message: "Ocorreu um erro no servidor",
-                errorMessage: "Erro desconhecido"
-            });
-        }
-    };
+      return res.status(500).json({
+        message: "Ocorreu um erro no servidor",
+        errorMessage: "Erro desconhecido",
+      });
+    }
+  };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import { Request, Response } from "express";
 // import bcrypt from "bcryptjs";
@@ -653,60 +491,10 @@ export class AuthController {
 //     };
 // }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // // import { Request, Response } from "express";
 // // import bcrypt from 'bcryptjs';
 // // import { LoginRepository } from "../repository/LoginRepository";
 // // import { JwtService } from "../utils/JwtService";
-
 
 // // export class AuthController {
 // //     private loginRepo: LoginRepository;
