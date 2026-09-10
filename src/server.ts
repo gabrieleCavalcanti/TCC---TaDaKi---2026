@@ -24,6 +24,6 @@ app.use(
 
 app.use("/", router);
 
-app.listen(EnvVar.SERVER_PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${EnvVar.SERVER_PORT}`);
+app.listen(EnvVar.SERVER_PORT, "0.0.0.0", () => {
+  console.log(`Servidor rodando na porta ${EnvVar.SERVER_PORT}`);
 });

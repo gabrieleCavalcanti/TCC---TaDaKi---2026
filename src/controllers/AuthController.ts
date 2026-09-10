@@ -28,7 +28,6 @@ export class AuthController {
   login = async (req: Request, res: Response) => {
     try {
       const { username, password } = req.body;
-      console.log(username, password);
 
       // Validação do username
       if (!username || typeof username !== "string" || username.trim() === "") {
