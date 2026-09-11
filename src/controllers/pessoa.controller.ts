@@ -236,46 +236,46 @@ export class PessoaController {
         // ENDEREÇO
         // =========================
 
-        if (!infoExtra.cep || !infoExtra.numero) {
-            return res.status(400).json({
-                message: "CEP e número são obrigatórios"
-            });
-        }
+        // if (!infoExtra.cep || !infoExtra.numero) {
+        //     return res.status(400).json({
+        //         message: "CEP e número são obrigatórios"
+        //     });
+        // }
 
-        const cep = String(infoExtra.cep).replace(/\D/g, "");
+        // const cep = String(infoExtra.cep).replace(/\D/g, "");
 
-        if (!/^\d{8}$/.test(cep)) {
-            return res.status(400).json({
-                message: "CEP inválido"
-            });
-        }
+        // if (!/^\d{8}$/.test(cep)) {
+        //     return res.status(400).json({
+        //         message: "CEP inválido"
+        //     });
+        // }
 
-        try {
-            const response = await axios.get(
-                `https://viacep.com.br/ws/${cep}/json/`
-            );
+        // try {
+        //     const response = await axios.get(
+        //         `https://viacep.com.br/ws/${cep}/json/`
+        //     );
 
-            const endereco = response.data;
+        //     const endereco = response.data;
 
-            if (endereco.erro) {
-                return res.status(400).json({
-                    message: "CEP não encontrado"
-                });
-            }
+        //     if (endereco.erro) {
+        //         return res.status(400).json({
+        //             message: "CEP não encontrado"
+        //         });
+        //     }
 
-            infoExtra.cep = cep;
-            infoExtra.rua = endereco.logradouro;
-            infoExtra.bairro = endereco.bairro;
-            infoExtra.municipio = endereco.localidade;
-            infoExtra.uf = endereco.uf;
+        //     infoExtra.cep = cep;
+        //     infoExtra.rua = endereco.logradouro;
+        //     infoExtra.bairro = endereco.bairro;
+        //     infoExtra.municipio = endereco.localidade;
+        //     infoExtra.uf = endereco.uf;
 
-        } catch (error) {
-            console.error("Erro ao consultar CEP:", error);
+        // } catch (error) {
+        //     console.error("Erro ao consultar CEP:", error);
 
-            return res.status(502).json({
-                message: "Não foi possível consultar o CEP"
-            });
-        }
+        //     return res.status(502).json({
+        //         message: "Não foi possível consultar o CEP"
+        //     });
+        // }
 
         //api CEP, preciso mandar as informaç~esa
 

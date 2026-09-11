@@ -188,24 +188,24 @@ export class PessoaRepository {
         // vai cair em controller o Cep e o numro, dai usar a API do CEP para vvir as outras informaçõs, dai aqui em repository já vou vir com as infomaç~soes
         // que vai vir da api do cep, aqui vamos inserior
 
-        const sqlEndereco = `
-            INSERT INTO enderecos
-            (rua, numero, bairro, municipio, cep, uf, id_pessoa)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
-        `;
+        // const sqlEndereco = `
+        //     INSERT INTO enderecos
+        //     (rua, numero, bairro, municipio, cep, uf, id_pessoa)
+        //     VALUES (?, ?, ?, ?, ?, ?, ?);
+        // `;
 
-        await connection.execute<ResultSetHeader>(
-            sqlEndereco,
-            [
-                infoExtra.rua,
-                infoExtra.numero,
-                infoExtra.bairro,
-                infoExtra.municipio,
-                infoExtra.cep,
-                infoExtra.uf,
-                id_pessoa
-            ]
-        );   
+        // await connection.execute<ResultSetHeader>(
+        //     sqlEndereco,
+        //     [
+        //         infoExtra.rua,
+        //         infoExtra.numero,
+        //         infoExtra.bairro,
+        //         infoExtra.municipio,
+        //         infoExtra.cep,
+        //         infoExtra.uf,
+        //         id_pessoa
+        //     ]
+        // );   
 
         // =========================
         // EMAIL E TELEFONE
