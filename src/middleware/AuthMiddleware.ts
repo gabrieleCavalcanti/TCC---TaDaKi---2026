@@ -7,6 +7,7 @@ declare global {
             user?: {
                 id_login: number;
                 username: string;
+                tipo: string;
             };
         }
     }
@@ -54,7 +55,8 @@ export class AuthMiddleware {
 
             req.user = {
                 id_login: decoded.login_id,
-                username: decoded.username
+                username: decoded.username,
+                tipo: decoded.tipo,
             };
 
             next();

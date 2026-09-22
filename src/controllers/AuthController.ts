@@ -65,6 +65,7 @@ export class AuthController {
       const payload = {
         login_id: user.id_pessoa_login!,
         username: user.username,
+        tipo: user.tipo
       };
 
       // Gera Access Token
@@ -139,6 +140,7 @@ export class AuthController {
         user: {
           id_pessoa_login: user.id_pessoa_login,
           username: user.username,
+          tipo: user.tipo,
         },
       });
     } catch (error: unknown) {
@@ -179,6 +181,7 @@ export class AuthController {
       const payload = {
         login_id: dados.login_id,
         username: dados.username,
+        tipo: dados.tipo
       };
 
       // Gera novo Access Token
