@@ -3,351 +3,333 @@ import { IPessoa, Pessoa } from "../models/pessoa.model";
 import { ResultSetHeader, PoolConnection } from "mysql2/promise";
 
 export class PessoaRepository {
-    // não precisa te findAll
-    async findAll(): Promise<IPessoa[]> {
-        const [rows] = await db.execute<IPessoa[]>(
-            'SELECT * FROM pessoas;'
-        );
-        return rows;
-    }
+  // não precisa te findAll
+  async findAll(): Promise<IPessoa[]> {
+    const [rows] = await db.execute<IPessoa[]>("SELECT * FROM pessoas;");
+    return rows;
+  }
 
-    // precisa ter um de cliente e um de org
-    async findId(id_pessoa: number): Promise<IPessoa[]> {
-        const sql = 'SELECT * FROM pessoas WHERE id_pessoa=?;';
-        const values = [id_pessoa];
-        const [rows] = await db.execute<IPessoa[]>(sql, values);
-        return rows;
-    }
+  // precisa ter um de cliente e um de org
+  async findId(id_pessoa: number): Promise<IPessoa[]> {
+    const sql = `
+        SELECT
+            p.id_pessoa,
+            p.nome,
+            p.data_cad,
+            p.tipo,
+            o.id_organizacao
+        FROM pessoas p
+        LEFT JOIN organizacao o
+            ON o.id_pessoa = p.id_pessoa
+        WHERE p.id_pessoa = ?;
+    `;
 
-    // precisa ter um de cliente e um de org
-    async findNome(nome_pessoa: string): Promise<IPessoa[]> {
-        const sql = 'SELECT * FROM pessoas WHERE nome=?;';
-        const values = [nome_pessoa];
-        const [rows] = await db.execute<IPessoa[]>(sql, values);
-        return rows;
-    }
+    const values = [id_pessoa];
 
-    // async create(dados: Pessoa, infoExtra: any): Promise<void> {
-    //     const connection: PoolConnection = await db.getConnection();
+    const [rows] = await db.execute<IPessoa[]>(sql, values);
 
-    //     try {
-    //         await connection.beginTransaction();
+    return rows;
+  }
 
-    //         const sqlPessoa = `INSERT INTO pessoas (nome, tipo) VALUES (?, ?);`;
+  // precisa ter um de cliente e um de org
+  async findNome(nome_pessoa: string): Promise<IPessoa[]> {
+    const sql = "SELECT * FROM pessoas WHERE nome=?;";
+    const values = [nome_pessoa];
+    const [rows] = await db.execute<IPessoa[]>(sql, values);
+    return rows;
+  }
 
-    //         if (!dados.Tipo) {
-    //             throw new Error("Tipo é obrigatório");
-    //         }
+  // async create(dados: Pessoa, infoExtra: any): Promise<void> {
+  //     const connection: PoolConnection = await db.getConnection();
 
-    //         const valuesPessoa = [dados.Nome, dados.Tipo];
+  //     try {
+  //         await connection.beginTransaction();
 
-    //         const [resultPessoa] = await connection.execute<ResultSetHeader>(sqlPessoa, valuesPessoa);
+  //         const sqlPessoa = `INSERT INTO pessoas (nome, tipo) VALUES (?, ?);`;
 
-    //         const tiposValidos = [
-    //             'CLIENTE',
-    //             'ORGANIZACAO'
-    //         ];
+  //         if (!dados.Tipo) {
+  //             throw new Error("Tipo é obrigatório");
+  //         }
 
-    //         if (!tiposValidos.includes(dados.Tipo)) {
-    //             throw new Error('Tipo inválido');
-    //         }
+  //         const valuesPessoa = [dados.Nome, dados.Tipo];
 
-    //         if (dados.Tipo === 'CLIENTE') {
-    //             const id_pessoa = resultPessoa.insertId;
-    //             const sqlCliente = `INSERT INTO clientes (data_nascimento, id_pessoa)VALUES (?, ?);`;
+  //         const [resultPessoa] = await connection.execute<ResultSetHeader>(sqlPessoa, valuesPessoa);
 
-    //             await connection.execute<ResultSetHeader>(sqlCliente, [infoExtra.data_nascimento, id_pessoa]);
-    //         }
+  //         const tiposValidos = [
+  //             'CLIENTE',
+  //             'ORGANIZACAO'
+  //         ];
 
-    //         // FORNECEDOR
-    //         if (dados.Tipo === 'ORGANIZACAO') {
-    //             const id_pessoa = resultPessoa.insertId;
-    //             const sqlFornecedor = `INSERT INTO organizacao (cpf, cnpj, data_criacao, id_pessoa, id_area_atuacao)VALUES (?, ?, ?, ?, ?); `;
+  //         if (!tiposValidos.includes(dados.Tipo)) {
+  //             throw new Error('Tipo inválido');
+  //         }
 
-    //             await connection.execute<ResultSetHeader>(
-    //                 sqlFornecedor,
-    //                 [infoExtra.cpf, infoExtra.cnpj, infoExtra.data_criacao, id_pessoa, infoExtra.id_area_atuacao]
-    //             );
-    //         }
+  //         if (dados.Tipo === 'CLIENTE') {
+  //             const id_pessoa = resultPessoa.insertId;
+  //             const sqlCliente = `INSERT INTO clientes (data_nascimento, id_pessoa)VALUES (?, ?);`;
 
-    //         await connection.commit();
+  //             await connection.execute<ResultSetHeader>(sqlCliente, [infoExtra.data_nascimento, id_pessoa]);
+  //         }
 
-    //     } catch (error) {
-    //         await connection.rollback();
-    //         throw error;
+  //         // FORNECEDOR
+  //         if (dados.Tipo === 'ORGANIZACAO') {
+  //             const id_pessoa = resultPessoa.insertId;
+  //             const sqlFornecedor = `INSERT INTO organizacao (cpf, cnpj, data_criacao, id_pessoa, id_area_atuacao)VALUES (?, ?, ?, ?, ?); `;
 
-    //     } finally {
-    //         connection.release();
-    //     }
-    // }
+  //             await connection.execute<ResultSetHeader>(
+  //                 sqlFornecedor,
+  //                 [infoExtra.cpf, infoExtra.cnpj, infoExtra.data_criacao, id_pessoa, infoExtra.id_area_atuacao]
+  //             );
+  //         }
 
-    async create(dados: Pessoa, infoExtra: any): Promise<void> {
+  //         await connection.commit();
+
+  //     } catch (error) {
+  //         await connection.rollback();
+  //         throw error;
+
+  //     } finally {
+  //         connection.release();
+  //     }
+  // }
+
+  async create(dados: Pessoa, infoExtra: any): Promise<void> {
     const connection: PoolConnection = await db.getConnection();
 
     try {
-        await connection.beginTransaction();
+      await connection.beginTransaction();
 
-        // =========================
-        // CADASTRA PESSOA
-        // =========================
-        const sqlPessoa = `
+      // =========================
+      // CADASTRA PESSOA
+      // =========================
+      const sqlPessoa = `
             INSERT INTO pessoas (nome, tipo)
             VALUES (?, ?);
         `;
 
-        if (!dados.Tipo) {
-            throw new Error("Tipo é obrigatório");
-        }
+      if (!dados.Tipo) {
+        throw new Error("Tipo é obrigatório");
+      }
 
-        const tiposValidos = [
-            "CLIENTE",
-            "ORGANIZACAO"
-        ];
+      const tiposValidos = ["CLIENTE", "ORGANIZACAO"];
 
-        if (!tiposValidos.includes(dados.Tipo)) {
-            throw new Error("Tipo inválido");
-        }
+      if (!tiposValidos.includes(dados.Tipo)) {
+        throw new Error("Tipo inválido");
+      }
 
-        const valuesPessoa = [
-            dados.Nome,
-            dados.Tipo
-        ];
+      const valuesPessoa = [dados.Nome, dados.Tipo];
 
-        const [resultPessoa] =
-            await connection.execute<ResultSetHeader>(
-                sqlPessoa,
-                valuesPessoa
-            );
+      const [resultPessoa] = await connection.execute<ResultSetHeader>(
+        sqlPessoa,
+        valuesPessoa,
+      );
 
-        const id_pessoa = resultPessoa.insertId;
+      const id_pessoa = resultPessoa.insertId;
 
-        // =========================
-        // CLIENTE
-        // =========================
-        if (dados.Tipo === "CLIENTE") {
-
-            const sqlCliente = `
+      // =========================
+      // CLIENTE
+      // =========================
+      if (dados.Tipo === "CLIENTE") {
+        const sqlCliente = `
                 INSERT INTO clientes
                 (data_nascimento, id_pessoa)
                 VALUES (?, ?);
             `;
 
-            await connection.execute<ResultSetHeader>(
-                sqlCliente,
-                [
-                    infoExtra.data_nascimento,
-                    id_pessoa
-                ]
-            );
-        }
+        await connection.execute<ResultSetHeader>(sqlCliente, [
+          infoExtra.data_nascimento,
+          id_pessoa,
+        ]);
+      }
 
-        // =========================
-        // ORGANIZAÇÃO
-        // =========================
-        if (dados.Tipo === "ORGANIZACAO") {
-
-            const sqlOrganizacao = `
+      // =========================
+      // ORGANIZAÇÃO
+      // =========================
+      if (dados.Tipo === "ORGANIZACAO") {
+        const sqlOrganizacao = `
                 INSERT INTO organizacao
                 (cpf, cnpj, data_criacao, id_pessoa, id_area_atuacao)
                 VALUES (?, ?, ?, ?, ?);
             `;
 
-            await connection.execute<ResultSetHeader>(
-                sqlOrganizacao,
-                [
-                    infoExtra.cpf,
-                    infoExtra.cnpj,
-                    infoExtra.data_criacao,
-                    id_pessoa,
-                    infoExtra.id_area_atuacao
-                ]
-            );
-        }
+        await connection.execute<ResultSetHeader>(sqlOrganizacao, [
+          infoExtra.cpf,
+          infoExtra.cnpj,
+          infoExtra.data_criacao,
+          id_pessoa,
+          infoExtra.id_area_atuacao,
+        ]);
+      }
 
-        // =========================
-        // LOGIN
-        // =========================
-        const sqlLogin = `
+      // =========================
+      // LOGIN
+      // =========================
+      const sqlLogin = `
             INSERT INTO login
             (id_pessoa_login, username, password_hash)
             VALUES (?, ?, ?);
         `;
 
-        await connection.execute<ResultSetHeader>(
-            sqlLogin,
-            [
-                id_pessoa,
-                infoExtra.username,
-                infoExtra.password_hash
-            ]
-        );
+      await connection.execute<ResultSetHeader>(sqlLogin, [
+        id_pessoa,
+        infoExtra.username,
+        infoExtra.password_hash,
+      ]);
 
-        // =========================
-        // ENDEREÇO
-        // ========================= 
-        // vai cair em controller o Cep e o numro, dai usar a API do CEP para vvir as outras informaçõs, dai aqui em repository já vou vir com as infomaç~soes
-        // que vai vir da api do cep, aqui vamos inserior
+      // =========================
+      // ENDEREÇO
+      // =========================
+      // vai cair em controller o Cep e o numro, dai usar a API do CEP para vvir as outras informaçõs, dai aqui em repository já vou vir com as infomaç~soes
+      // que vai vir da api do cep, aqui vamos inserior
 
-        const sqlEndereco = `
-            INSERT INTO enderecos
-            (rua, numero, bairro, municipio, cep, uf, id_pessoa)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
-        `;
+        // const sqlEndereco = `
+        //     INSERT INTO enderecos
+        //     (rua, numero, bairro, municipio, cep, uf, id_pessoa)
+        //     VALUES (?, ?, ?, ?, ?, ?, ?);
+        // `;
 
-        await connection.execute<ResultSetHeader>(
-            sqlEndereco,
-            [
-                infoExtra.rua,
-                infoExtra.numero,
-                infoExtra.bairro,
-                infoExtra.municipio,
-                infoExtra.cep,
-                infoExtra.uf,
-                id_pessoa
-            ]
-        );   
+        // await connection.execute<ResultSetHeader>(
+        //     sqlEndereco,
+        //     [
+        //         infoExtra.rua,
+        //         infoExtra.numero,
+        //         infoExtra.bairro,
+        //         infoExtra.municipio,
+        //         infoExtra.cep,
+        //         infoExtra.uf,
+        //         id_pessoa
+        //     ]
+        // );   
 
-        // =========================
-        // EMAIL E TELEFONE
-        // =========================
+      // =========================
+      // EMAIL E TELEFONE
+      // =========================
 
-        const sqlContato = `
+      const sqlContato = `
             INSERT INTO contatos
             (telefone, email, id_pessoa)
             VALUES (?, ?, ?);
         `;
 
-        await connection.execute<ResultSetHeader>(
-            sqlContato,
-            [
-                infoExtra.telefone,
-                infoExtra.email,
-                id_pessoa
-            ]
-        );
-        
-        
+      await connection.execute<ResultSetHeader>(sqlContato, [
+        infoExtra.telefone,
+        infoExtra.email,
+        id_pessoa,
+      ]);
 
-        await connection.commit();
-
+      await connection.commit();
     } catch (error) {
-
-        await connection.rollback();
-        throw error;
-
+      await connection.rollback();
+      throw error;
     } finally {
-
-        connection.release();
+      connection.release();
     }
-}
+  }
 
-    async update(dados: Pessoa, infoExtra: any): Promise<void> {
+  async update(dados: Pessoa, infoExtra: any): Promise<void> {
+    const connection: PoolConnection = await db.getConnection();
 
-        const connection: PoolConnection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
 
-        try {
+      if (!dados.Id) {
+        throw new Error("Id é obrigatório");
+      }
 
-            await connection.beginTransaction();
+      // busca a pessoa atual
+      const sqlBusca = `SELECT tipo FROM pessoas WHERE id_pessoa = ?;`;
 
-            if (!dados.Id) { throw new Error("Id é obrigatório"); }
+      const [rows]: any = await connection.execute(sqlBusca, [dados.Id]);
 
-            // busca a pessoa atual
-            const sqlBusca = `SELECT tipo FROM pessoas WHERE id_pessoa = ?;`;
+      if (rows.length === 0) {
+        throw new Error("Pessoa não encontrada");
+      }
 
-            const [rows]: any = await connection.execute(sqlBusca, [dados.Id]);
+      const tipo = rows[0].tipo;
 
-            if (rows.length === 0) {
-                throw new Error("Pessoa não encontrada");
-            }
+      // atualiza pessoa
+      const sqlPessoa = `UPDATE pessoas SET nome = ? WHERE id_pessoa = ?;`;
 
-            const tipo = rows[0].tipo;
+      await connection.execute<ResultSetHeader>(sqlPessoa, [
+        dados.Nome,
+        dados.Id,
+      ]);
 
-            // atualiza pessoa
-            const sqlPessoa = `UPDATE pessoas SET nome = ? WHERE id_pessoa = ?;`;
+      // CLIENTE
+      if (tipo === "CLIENTE") {
+        const sqlCliente = `UPDATE clientes SET data_nascimento = ? WHERE id_pessoa = ?; `;
 
-            await connection.execute<ResultSetHeader>(sqlPessoa, [dados.Nome, dados.Id]);
+        await connection.execute<ResultSetHeader>(sqlCliente, [
+          infoExtra.data_nascimento,
+          dados.Id,
+        ]);
+      }
 
-            // CLIENTE
-            if (tipo === 'CLIENTE') {
-                const sqlCliente = `UPDATE clientes SET data_nascimento = ? WHERE id_pessoa = ?; `;
+      // ORGANIZACAO
+      if (tipo === "ORGANIZACAO") {
+        const cpf = infoExtra.cpf?.trim();
+        const cnpj = infoExtra.cnpj?.trim();
 
-                await connection.execute<ResultSetHeader>(sqlCliente, [infoExtra.data_nascimento, dados.Id]);
-            }
+        const sqlOrganizacao = `UPDATE organizacao SET cpf=?, cnpj=?, data_criacao=?, id_area_atuacao=? WHERE id_pessoa=?; `;
 
-            // ORGANIZACAO
-            if (tipo === 'ORGANIZACAO') {
+        await connection.execute<ResultSetHeader>(sqlOrganizacao, [
+          cpf ?? null,
+          cnpj ?? null,
+          infoExtra.data_criacao,
+          infoExtra.id_area_atuacao,
+          dados.Id,
+        ]);
+      }
 
-                const cpf = infoExtra.cpf?.trim();
-                const cnpj = infoExtra.cnpj?.trim();
-
-                const sqlOrganizacao = `UPDATE organizacao SET cpf=?, cnpj=?, data_criacao=?, id_area_atuacao=? WHERE id_pessoa=?; `;
-
-                await connection.execute<ResultSetHeader>(
-                    sqlOrganizacao,
-                    [
-                        cpf ?? null,
-                        cnpj ?? null,
-                        infoExtra.data_criacao,
-                        infoExtra.id_area_atuacao,
-                        dados.Id
-                    ]
-                );
-            }
-
-            await connection.commit();
-
-        } catch (error) {
-
-            await connection.rollback();
-            throw error;
-
-        } finally {
-
-            connection.release();
-        }
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
+  }
 
-    async findClientes(): Promise<IPessoa[]> {
-        const [rows] = await db.execute<IPessoa[]>(
-            `SELECT * FROM vw_pessoas_clientes;`
-        );
+  async findClientes(): Promise<IPessoa[]> {
+    const [rows] = await db.execute<IPessoa[]>(
+      `SELECT * FROM vw_pessoas_clientes;`,
+    );
 
-        // CREATE VIEW vw_pessoas_clientes AS
-        // 	SELECT 
-        //                 pessoas.id_pessoa,
-        //                 pessoas.nome,
-        //                 pessoas.tipo,
-        //                 clientes.data_nascimento
-        //             FROM pessoas
-        //             INNER JOIN clientes 
-        //             ON pessoas.id_pessoa = clientes.id_pessoa
-        //             WHERE pessoas.tipo = "CLIENTE"
-        //             ORDER BY pessoas.nome ASC;
-        return rows;
-    }
+    // CREATE VIEW vw_pessoas_clientes AS
+    // 	SELECT
+    //                 pessoas.id_pessoa,
+    //                 pessoas.nome,
+    //                 pessoas.tipo,
+    //                 clientes.data_nascimento
+    //             FROM pessoas
+    //             INNER JOIN clientes
+    //             ON pessoas.id_pessoa = clientes.id_pessoa
+    //             WHERE pessoas.tipo = "CLIENTE"
+    //             ORDER BY pessoas.nome ASC;
+    return rows;
+  }
 
-    async findOrganizacao(): Promise<IPessoa[]> {
-        const [rows] = await db.execute<IPessoa[]>(
-            `SELECT * FROM vw_pessoas_organizacao;`
-        );
+  async findOrganizacao(): Promise<IPessoa[]> {
+    const [rows] = await db.execute<IPessoa[]>(
+      `SELECT * FROM vw_pessoas_organizacao;`,
+    );
 
-        //CREATE VIEW vw_pessoas_organizacao AS
-        // SELECT 
-        //                 pessoas.id_pessoa,
-        //                 pessoas.nome,
-        //                 pessoas.tipo,
-        //                 organizacao.cpf,
-        //                 organizacao.cnpj,
-        //                 organizacao.data_criacao,
-        //                 organizacao.id_area_atuacao
-        //             FROM pessoas
-        //             INNER JOIN organizacao 
-        //             ON pessoas.id_pessoa = organizacao.id_pessoa
-        //             WHERE pessoas.tipo = "ORGANIZACAO"
-        //             ORDER BY pessoas.nome ASC;
-        return rows;
-    }
+    //CREATE VIEW vw_pessoas_organizacao AS
+    // SELECT
+    //                 pessoas.id_pessoa,
+    //                 pessoas.nome,
+    //                 pessoas.tipo,
+    //                 organizacao.cpf,
+    //                 organizacao.cnpj,
+    //                 organizacao.data_criacao,
+    //                 organizacao.id_area_atuacao
+    //             FROM pessoas
+    //             INNER JOIN organizacao
+    //             ON pessoas.id_pessoa = organizacao.id_pessoa
+    //             WHERE pessoas.tipo = "ORGANIZACAO"
+    //             ORDER BY pessoas.nome ASC;
+    return rows;
+  }
 
-
-    // não sera necessario ter clinte e org, do repository pra frente, pq os selectes, insert e update ta em pessoa
+  // não sera necessario ter clinte e org, do repository pra frente, pq os selectes, insert e update ta em pessoa
 }

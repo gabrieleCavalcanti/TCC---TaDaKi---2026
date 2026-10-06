@@ -109,18 +109,20 @@ export class AuthController {
                 }
             );
 
-            // Não devolvemos os tokens no JSON
-            return res.status(200).json({
-                message: "Login realizado com sucesso",
-                user: {
-                    id_pessoa_login: user.id_pessoa_login,
-                    username: user.username
-                }
-            });
+      // Não devolvemos os tokens no JSON
+      return res.status(200).json({
+        message: "Login realizado com sucesso",
 
-        } catch (error: unknown) {
+        user: {
+          id_pessoa_login: user.id_pessoa_login,
+          username: user.username,
+        },
 
-            console.error(error);
+        token_acesso: accessToken,
+        refresh_token: refreshToken,
+      });
+    } catch (error: unknown) {
+      console.error(error);
 
             if (error instanceof Error) {
                 return res.status(500).json({
