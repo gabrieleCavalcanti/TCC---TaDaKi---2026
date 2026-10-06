@@ -12,7 +12,7 @@ import authRoutes from "./AuthRoutes";
 
 
 const router = Router();
-router.use("/", authRoutes);
+router.use("/auth", authRoutes);
 
 router.use('/', areaAtuacaoRoutes);
 router.use('/', avaliacaoRoutes);

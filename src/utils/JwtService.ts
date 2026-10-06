@@ -4,6 +4,7 @@ import "dotenv/config";
 export interface JwtDados {
     login_id: number;
     username: string;
+    tipo: string;
 }
 
 export class JwtService {
