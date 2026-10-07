@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { LoginRepository } from "../repository/LoginRepository";
 import { JwtService } from "../utils/JwtService";
+import { RecuperacaoSenhaService } from "../services/recuperacaoSenha.service";
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -14,11 +15,13 @@ export class AuthController {
   private loginRepo: LoginRepository;
   private jwtService: JwtService;
   private bcryptRounds: number;
+  private recuperacaoSenhaService: RecuperacaoSenhaService;
 
   constructor() {
     this.loginRepo = new LoginRepository();
     this.jwtService = new JwtService();
     this.bcryptRounds = Number(process.env.BCRYPT_ROUNDS) || 10;
+    this.recuperacaoSenhaService = new RecuperacaoSenhaService();
   }
 
   // =========================
@@ -65,7 +68,7 @@ export class AuthController {
       const payload = {
         login_id: user.id_pessoa_login!,
         username: user.username,
-        tipo: user.tipo
+        tipo: user.tipo,
       };
 
       // Gera Access Token
@@ -181,7 +184,7 @@ export class AuthController {
       const payload = {
         login_id: dados.login_id,
         username: dados.username,
-        tipo: dados.tipo
+        tipo: dados.tipo,
       };
 
       // Gera novo Access Token
@@ -241,6 +244,100 @@ export class AuthController {
       console.error(error);
 
       if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Ocorreu um erro no servidor",
+          errorMessage: error.message,
+        });
+      }
+
+      return res.status(500).json({
+        message: "Ocorreu um erro no servidor",
+        errorMessage: "Erro desconhecido",
+      });
+    }
+  };
+
+  // =========================
+  // ESQUECI MINHA SENHA
+  // =========================
+
+  forgotPassword = async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+
+      if (!email || typeof email !== "string" || email.trim() === "") {
+        return res.status(400).json({
+          message: "E-mail é obrigatório",
+        });
+      }
+
+      const token =
+        await this.recuperacaoSenhaService.solicitarRecuperacao(email);
+
+      return res.status(200).json({
+        message: "E-mail de recuperação enviado com sucesso",
+      });
+    } catch (error: unknown) {
+      console.error(error);
+
+      if (error instanceof Error) {
+        if (error.message === "E-mail não encontrado") {
+          return res.status(404).json({
+            message: error.message,
+          });
+        }
+
+        return res.status(500).json({
+          message: "Ocorreu um erro no servidor",
+          errorMessage: error.message,
+        });
+      }
+
+      return res.status(500).json({
+        message: "Ocorreu um erro no servidor",
+        errorMessage: "Erro desconhecido",
+      });
+    }
+  };
+  resetPassword = async (req: Request, res: Response) => {
+    try {
+      const { token, novaSenha } = req.body;
+
+      if (!token || typeof token !== "string" || token.trim() === "") {
+        return res.status(400).json({
+          message: "Token é obrigatório",
+        });
+      }
+
+      if (
+        !novaSenha ||
+        typeof novaSenha !== "string" ||
+        novaSenha.trim() === ""
+      ) {
+        return res.status(400).json({
+          message: "Nova senha é obrigatória",
+        });
+      }
+
+      await this.recuperacaoSenhaService.redefinirSenha(token, novaSenha);
+
+      return res.status(200).json({
+        message: "Senha redefinida com sucesso",
+      });
+    } catch (error: unknown) {
+      console.error(error);
+
+      if (error instanceof Error) {
+        if (
+          error.message === "Token inválido" ||
+          error.message === "Token já utilizado" ||
+          error.message === "Token expirado"
+        ) {
+          return res.status(400).json({
+            message: error.message,
+          });
+        }
+
         return res.status(500).json({
           message: "Ocorreu um erro no servidor",
           errorMessage: error.message,

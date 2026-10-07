@@ -8,29 +8,18 @@ const authMiddleware = new AuthMiddleware();
 
 const authRoutes = Router();
 
-authRoutes.post( "/login", authController.login);
-authRoutes.post( "/refresh",authController.refresh);
-authRoutes.post( "/logout",  authController.logout);
-authRoutes.get( "/me", authMiddleware.authenticate, authController.me);
-authRoutes.get( "/rotaProtegida", authMiddleware.authenticate, authController.rotaProtegida);
+authRoutes.post("/login", authController.login);
+authRoutes.post("/refresh", authController.refresh);
+authRoutes.post("/logout", authController.logout);
+authRoutes.get("/me", authMiddleware.authenticate, authController.me);
+authRoutes.get("/rotaProtegida", authMiddleware.authenticate, authController.rotaProtegida);
+authRoutes.post("/forgot-password", authController.forgotPassword);
+authRoutes.post(
+    "/reset-password",
+    authController.resetPassword
+);
 
 export default authRoutes;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // import { Router } from "express";
 // import { AuthController } from "../controllers/AuthController";
