@@ -10,19 +10,20 @@ import pessoaRoutes from "./pessoa.routes";
 import postRoutes from "./post.routes";
 import authRoutes from "./AuthRoutes";
 
+import dashboardRoutes from "./dashboard.routes";
 
 const router = Router();
 router.use("/auth", authRoutes);
+router.use("/", dashboardRoutes);
 
-router.use('/', areaAtuacaoRoutes);
-router.use('/', avaliacaoRoutes);
-router.use('/', categoriaRoutes);
-router.use('/', contatoRoutes);
-router.use('/', enderecoRoutes);
-router.use('/', favoritoRoutes);
-router.use('/', likeRoutes);
-router.use('/', pessoaRoutes);
-router.use('/', postRoutes);
-
+router.use("/", areaAtuacaoRoutes);
+router.use("/", avaliacaoRoutes);
+router.use("/", categoriaRoutes);
+router.use("/", contatoRoutes);
+router.use("/", enderecoRoutes);
+router.use("/", favoritoRoutes);
+router.use("/", likeRoutes);
+router.use("/", pessoaRoutes);
+router.use("/", postRoutes);
 
 export default router;

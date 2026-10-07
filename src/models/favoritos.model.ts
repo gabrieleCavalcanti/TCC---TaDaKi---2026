@@ -9,6 +9,7 @@ export interface IOrganizacao extends RowDataPacket {
 }
 
 export interface IFavorito extends RowDataPacket {
+    data_favoritado?: string | Date | null;
     id_favorito?: number;
     id_cliente?: number;
     id_organizacao?: number;
