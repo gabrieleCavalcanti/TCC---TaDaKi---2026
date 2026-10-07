@@ -12,18 +12,24 @@ export class PessoaRepository {
   // precisa ter um de cliente e um de org
   async findId(id_pessoa: number): Promise<IPessoa[]> {
     const sql = `
-        SELECT
-            p.id_pessoa,
-            p.nome,
-            p.data_cad,
-            p.tipo,
-            o.id_organizacao
-        FROM pessoas p
-        LEFT JOIN organizacao o
-            ON o.id_pessoa = p.id_pessoa
-        WHERE p.id_pessoa = ?;
-    `;
-
+    SELECT 
+        p.id_pessoa,
+        p.nome,
+        p.data_cad,
+        p.tipo,
+        o.id_organizacao,
+        c.id_cliente,
+        c.data_nascimento,
+        ct.*
+    FROM pessoas p
+    LEFT JOIN organizacao o 
+        ON o.id_pessoa = p.id_pessoa
+    LEFT JOIN clientes c 
+        ON c.id_pessoa = p.id_pessoa
+    LEFT JOIN contatos ct 
+        ON ct.id_pessoa = p.id_pessoa
+    WHERE p.id_pessoa = ?;
+`;
     const values = [id_pessoa];
 
     const [rows] = await db.execute<IPessoa[]>(sql, values);
@@ -182,24 +188,24 @@ export class PessoaRepository {
       // vai cair em controller o Cep e o numro, dai usar a API do CEP para vvir as outras informaçõs, dai aqui em repository já vou vir com as infomaç~soes
       // que vai vir da api do cep, aqui vamos inserior
 
-        // const sqlEndereco = `
-        //     INSERT INTO enderecos
-        //     (rua, numero, bairro, municipio, cep, uf, id_pessoa)
-        //     VALUES (?, ?, ?, ?, ?, ?, ?);
-        // `;
+      // const sqlEndereco = `
+      //     INSERT INTO enderecos
+      //     (rua, numero, bairro, municipio, cep, uf, id_pessoa)
+      //     VALUES (?, ?, ?, ?, ?, ?, ?);
+      // `;
 
-        // await connection.execute<ResultSetHeader>(
-        //     sqlEndereco,
-        //     [
-        //         infoExtra.rua,
-        //         infoExtra.numero,
-        //         infoExtra.bairro,
-        //         infoExtra.municipio,
-        //         infoExtra.cep,
-        //         infoExtra.uf,
-        //         id_pessoa
-        //     ]
-        // );   
+      // await connection.execute<ResultSetHeader>(
+      //     sqlEndereco,
+      //     [
+      //         infoExtra.rua,
+      //         infoExtra.numero,
+      //         infoExtra.bairro,
+      //         infoExtra.municipio,
+      //         infoExtra.cep,
+      //         infoExtra.uf,
+      //         id_pessoa
+      //     ]
+      // );
 
       // =========================
       // EMAIL E TELEFONE
