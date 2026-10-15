@@ -32,21 +32,22 @@ export class AuthController {
     try {
       const { username, password } = req.body;
 
-      // Validação do username
-      if (!username || typeof username !== "string" || username.trim() === "") {
+      if (
+        !username ||
+        typeof username !== "string" ||
+        username.trim() === ""
+      ) {
         return res.status(400).json({
           message: "Username é obrigatório",
         });
       }
 
-      // Validação da senha
       if (!password || typeof password !== "string") {
         return res.status(400).json({
           message: "Senha é obrigatória",
         });
       }
 
-      // Procura usuário
       const user = await this.loginRepo.findByUsername(username.trim());
 
       if (!user) {
@@ -55,8 +56,10 @@ export class AuthController {
         });
       }
 
-      // Verifica senha
-      const passwordMatch = await bcrypt.compare(password, user.password_hash);
+      const passwordMatch = await bcrypt.compare(
+        password,
+        user.password_hash
+      );
 
       if (!passwordMatch) {
         return res.status(401).json({
@@ -64,38 +67,33 @@ export class AuthController {
         });
       }
 
-      // Dados que serão colocados no JWT
       const payload = {
         login_id: user.id_pessoa_login!,
         username: user.username,
         tipo: user.tipo,
       };
 
-      // Gera Access Token
       const accessToken = this.jwtService.gerarTokenAcesso(payload);
 
-      // Gera Refresh Token
       const refreshToken = this.jwtService.gerarRefreshToken(payload);
 
-      // Salva Access Token no cookie
       res.cookie("accessToken", accessToken, {
         ...COOKIE_OPTIONS,
         maxAge: 15 * 60 * 1000,
       });
 
-      // Salva Refresh Token no cookie
       res.cookie("refreshToken", refreshToken, {
         ...COOKIE_OPTIONS,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      // Não devolvemos os tokens no JSON
       return res.status(200).json({
         message: "Login realizado com sucesso",
 
         user: {
           id_pessoa_login: user.id_pessoa_login,
           username: user.username,
+          tipo: user.tipo,
         },
 
         token_acesso: accessToken,
@@ -169,8 +167,8 @@ export class AuthController {
 
   refresh = async (req: Request, res: Response) => {
     try {
-      // Primeiro tenta pegar o cookie
-      const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+      const refreshToken =
+        req.cookies?.refreshToken || req.body?.refreshToken;
 
       if (!refreshToken) {
         return res.status(401).json({
@@ -178,7 +176,6 @@ export class AuthController {
         });
       }
 
-      // Verifica o Refresh Token
       const dados = this.jwtService.verificarRefreshToken(refreshToken);
 
       const payload = {
@@ -187,10 +184,8 @@ export class AuthController {
         tipo: dados.tipo,
       };
 
-      // Gera novo Access Token
       const accessToken = this.jwtService.gerarTokenAcesso(payload);
 
-      // Atualiza o cookie do Access Token
       res.cookie("accessToken", accessToken, {
         ...COOKIE_OPTIONS,
         maxAge: 15 * 60 * 1000,
@@ -214,9 +209,7 @@ export class AuthController {
 
   logout = async (req: Request, res: Response) => {
     try {
-      // Remove os cookies
       res.clearCookie("accessToken", COOKIE_OPTIONS);
-
       res.clearCookie("refreshToken", COOKIE_OPTIONS);
 
       return res.status(200).json({
