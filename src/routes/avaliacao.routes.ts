@@ -9,6 +9,7 @@ const authMiddleware = new AuthMiddleware();
 
 avaliacaoRoutes.get('/Avaliacao', authMiddleware.authenticate, avaliacaoController.buscarAvaliacao)
 avaliacaoRoutes.post('/Avaliacao', authMiddleware.authenticate, verificarCliente, avaliacaoController.criar)
+avaliacaoRoutes.put('/Avaliacao/:id_avaliacao', authMiddleware.authenticate, verificarCliente, avaliacaoController.editar);
 avaliacaoRoutes.delete('/Avaliacao/:id_avaliacao', authMiddleware.authenticate, verificarCliente, avaliacaoController.deletar)
 
 export default avaliacaoRoutes;
