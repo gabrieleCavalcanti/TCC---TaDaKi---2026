@@ -30,28 +30,28 @@ export class Avaliacao {
     private _id_organizacao: number = 0
 
 
-constructor(
-    _comentario: string,
-    _titulo: string,
-    _csat: number,
-    _id_cliente: number,
-    _id_organizacao: number,
-    _anonimo: boolean,
-    id_avaliacao?: number,
-    data?: Date,
-) {
-    this._validarComentario(_comentario);
-    this._validarTitulo(_titulo);
+    constructor(
+        _comentario: string,
+        _titulo: string,
+        _csat: number,
+        _id_cliente: number,
+        _id_organizacao: number,
+        _anonimo: boolean,
+        id_avaliacao?: number,
+        data?: Date,
+    ) {
+        this._validarComentario(_comentario);
+        this._validarTitulo(_titulo);
 
-    this._comentario = _comentario;
-    this._titulo = _titulo;
-    this._csat = _csat;
-    this._anonimo = _anonimo;
-    this._id_avaliacao = id_avaliacao;
-    this._data = data;
-    this._id_cliente = _id_cliente;
-    this._id_organizacao = _id_organizacao;
-}
+        this._comentario = _comentario;
+        this._titulo = _titulo;
+        this._csat = _csat;
+        this._anonimo = _anonimo;
+        this._id_avaliacao = id_avaliacao;
+        this._data = data;
+        this._id_cliente = _id_cliente;
+        this._id_organizacao = _id_organizacao;
+    }
 
 
     public get IdAvaliacao(): number | undefined {
@@ -100,6 +100,24 @@ constructor(
         return new Avaliacao(comentario, titulo, csat, id_cliente, id_organizacao, anonimo)
     }
 
+    public static editar(
+        comentario: string,
+        titulo: string,
+        csat: number,
+        id_cliente: number,
+        id_organizacao: number,
+        anonimo: boolean
+    ): Avaliacao {
+        return new Avaliacao(
+            comentario,
+            titulo,
+            csat,
+            id_cliente,
+            id_organizacao,
+            anonimo
+        );
+    }
+    
     private _validarComentario(value: string): void {
         if (!value || value.trim().length < 10) {
             throw new Error('O comentário deve ter pelo menos 10 caracteres')

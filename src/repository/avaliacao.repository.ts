@@ -37,6 +37,12 @@ export class AvaliacaoRepository {
         return rows;
     }
 
+    async update(id_avaliacao: number, dados: Omit<IAvaliacao, 'id_avaliacao'>): Promise<ResultSetHeader> {
+    const sql = 'UPDATE avaliacao SET comentario = ?, titulo = ?, anonimo = ?, csat = ?, id_cliente = ?, id_organizacao = ? WHERE id_avaliacao = ?;';
+    const values = [dados._comentario, dados._titulo, dados._anonimo, dados._csat, dados._id_cliente, dados._id_organizacao, id_avaliacao];
+    const [rows] = await db.execute<ResultSetHeader>(sql, values);
+    return rows;
+}
     async delete(id_avaliacao: number): Promise<ResultSetHeader> {
         const sql = 'DELETE FROM avaliacao WHERE id_avaliacao=?;';
         const values = [id_avaliacao]
