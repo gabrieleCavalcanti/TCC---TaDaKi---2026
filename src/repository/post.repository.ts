@@ -29,7 +29,24 @@ export class PostRepository {
         const [result] = await db.execute<ResultSetHeader>(sql, values);
         return result;
     }
+async findArquivadosByOrganizacao(
+    id_organizacao: number
+): Promise<IPost[]> {
+    const sql = `
+        SELECT *
+        FROM posts
+        WHERE id_organizacao = ?
+        AND status = 'ARQUIVADO'
+        ORDER BY id_post DESC;
+    `;
 
+    const [rows] = await db.execute<IPost[]>(
+        sql,
+        [id_organizacao]
+    );
+
+    return rows;
+}
 
     async update( id_post: number, dados: Omit<IPost, "id_post">): Promise<ResultSetHeader> {
         const sql = `UPDATE posts SET  vincularImagem = ?, titulo = ?, descricao = ?, id_categoria = ?, id_organizacao = ? WHERE id_post = ?;`;
@@ -44,6 +61,18 @@ export class PostRepository {
     const [result] =  await db.execute<ResultSetHeader>(   sql,   [id_post]);
     return result;
     }
+    
+    async desarquivar( id_post: number, id_organizacao: number ): Promise<ResultSetHeader> {
+    const sql = `
+        UPDATE posts
+        SET status = 'PUBLICADO'
+        WHERE id_post = ?
+          AND id_organizacao = ?
+          AND status = 'ARQUIVADO';
+    `;
+    const [result] = await db.execute<ResultSetHeader>(sql, [id_post, id_organizacao]);
+    return result;
+}
 
 
     async findByCategoria( id_categoria: number): Promise<IPost[]> {

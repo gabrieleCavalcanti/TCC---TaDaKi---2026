@@ -35,7 +35,7 @@ export class AvaliacaoController {
             const resultadoOrg = await this._service.selecionaIdOrg(id_organizacao)
 
             if (resultadoCliente.length === 0 || resultadoOrg.length === 0) {
-                return res.status(200).json({ message: 'Não há dados com algum dos id pesquisados' })
+                return res.status(404).json({ message: 'Cliente ou organização não encontrado(a)' })
             }
 
             const novoRegistro = await this._service.criar(comentario, titulo, anonimo, csat, id_cliente, id_organizacao);

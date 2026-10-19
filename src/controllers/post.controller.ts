@@ -17,7 +17,37 @@ export class PostController {
         }
     };
 
+selecionaArquivadosByOrganizacao = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const id_organizacao = Number(req.query.id_organizacao);
 
+        if (
+            !Number.isSafeInteger(id_organizacao) ||
+            id_organizacao <= 0
+        ) {
+            return res.status(400).json({
+                message: "ID da organização inválido"
+            });
+        }
+
+        const posts =
+            await this._service.selecionaArquivadosByOrganizacao(
+                id_organizacao
+            );
+
+        return res.status(200).json({ posts });
+
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Erro ao buscar posts arquivados"
+        });
+    }
+};
     criar = async (req: Request, res: Response) => {
         try {
             const { titulo, descricao, id_categoria, id_organizacao } = req.body;
@@ -140,7 +170,49 @@ export class PostController {
             });
         }
     };
+    desarquivar = async (req: Request, res: Response) => {
+        try {
+            const id_post = Number(req.query.id_post);
+            const id_organizacao = Number(req.query.id_organizacao);
 
+            if (
+                !Number.isSafeInteger(id_post) ||
+                id_post <= 0 ||
+                !Number.isSafeInteger(id_organizacao) ||
+                id_organizacao <= 0
+            ) {
+                return res.status(400).json({
+                    message: "IDs inválidos."
+                });
+            }
+
+            // É necessário confirmar que a organização autenticada
+            // corresponde ao id_organizacao antes de alterar o post.
+
+            const resultado = await this._service.desarquivar(
+                id_post,
+                id_organizacao
+            );
+
+            if (resultado.affectedRows === 0) {
+                return res.status(404).json({
+                    message: "Publicação arquivada não encontrada."
+                });
+            }
+
+            return res.status(200).json({
+                message: "Publicação desarquivada com sucesso!",
+                status: "PUBLICADO"
+            });
+
+        } catch (error) {
+            console.error(error);
+
+            return res.status(500).json({
+                message: "Erro ao desarquivar publicação."
+            });
+        }
+    };
 
     selecionaById = async (req: Request, res: Response) => {
         try {
