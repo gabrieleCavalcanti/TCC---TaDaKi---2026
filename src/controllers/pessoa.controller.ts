@@ -94,8 +94,7 @@ export class PessoaController {
         }
 
         if (tipoPessoa === "ORGANIZACAO") {
-          const funcionarios =
-            await this._service.selecionaTodaOrganizacao();
+          const funcionarios = await this._service.selecionaTodaOrganizacao();
 
           return res.status(200).json({
             funcionarios,
@@ -145,11 +144,7 @@ export class PessoaController {
       // VALIDAÇÃO DA PESSOA
       // =========================
 
-      if (
-        !nome ||
-        typeof nome !== "string" ||
-        nome.trim() === ""
-      ) {
+      if (!nome || typeof nome !== "string" || nome.trim() === "") {
         return res.status(400).json({
           message: "Nome inválido",
         });
@@ -179,26 +174,14 @@ export class PessoaController {
       // EMAIL E TELEFONE
       // =========================
 
-      if (!infoExtra.email || !infoExtra.telefone) {
+      if (!infoExtra.email) {
         return res.status(400).json({
-          message: "E-mail e telefone são obrigatórios",
-        });
-      }
-
-      // Limpa caracteres do telefone
-      const telefone = String(infoExtra.telefone).replace(/\D/g, "");
-
-      // Telefone com DDD: 10 ou 11 dígitos
-      if (!/^\d{10,11}$/.test(telefone)) {
-        return res.status(400).json({
-          message: "Telefone inválido",
+          message: "E-mail é obrigatório",
         });
       }
 
       // Validação básica do e-mail
-      const email = String(infoExtra.email)
-        .trim()
-        .toLowerCase();
+      const email = String(infoExtra.email).trim().toLowerCase();
 
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({
@@ -206,8 +189,31 @@ export class PessoaController {
         });
       }
 
-      infoExtra.telefone = telefone;
       infoExtra.email = email;
+
+      // Telefone: obrigatório apenas para ORGANIZACAO
+      if (tipoFormatado === "ORGANIZACAO") {
+        if (!infoExtra.telefone) {
+          return res.status(400).json({
+            message: "Telefone é obrigatório para organização",
+          });
+        }
+
+        // Limpa caracteres do telefone
+        const telefone = String(infoExtra.telefone).replace(/\D/g, "");
+
+        // Telefone com DDD: 10 ou 11 dígitos
+        if (!/^\d{10,11}$/.test(telefone)) {
+          return res.status(400).json({
+            message: "Telefone inválido",
+          });
+        }
+
+        infoExtra.telefone = telefone;
+      } else {
+        // CLIENTE: telefone não é mais pedido, então descarta qualquer valor enviado
+        delete infoExtra.telefone;
+      }
 
       // =========================
       // USERNAME E SENHA
@@ -223,10 +229,7 @@ export class PessoaController {
         });
       }
 
-      if (
-        !infoExtra.password ||
-        typeof infoExtra.password !== "string"
-      ) {
+      if (!infoExtra.password || typeof infoExtra.password !== "string") {
         return res.status(400).json({
           message: "Senha inválida",
         });
@@ -239,10 +242,9 @@ export class PessoaController {
       }
 
       // Verifica se username já existe
-      const userExisting =
-        await this.loginRepo.findByUsername(
-          infoExtra.username.trim()
-        );
+      const userExisting = await this.loginRepo.findByUsername(
+        infoExtra.username.trim(),
+      );
 
       if (userExisting) {
         return res.status(409).json({
@@ -256,7 +258,7 @@ export class PessoaController {
 
       const password_hash = await bcrypt.hash(
         infoExtra.password,
-        this.bcryptRounds
+        this.bcryptRounds,
       );
 
       // Remove a senha original
@@ -301,13 +303,9 @@ export class PessoaController {
           });
         }
 
-        if (
-          cnpj &&
-          !/^[A-Z0-9]{14}$/.test(cnpj.toUpperCase())
-        ) {
+        if (cnpj && !/^[A-Z0-9]{14}$/.test(cnpj.toUpperCase())) {
           return res.status(400).json({
-            message:
-              "CNPJ deve conter 14 caracteres, entre letras e números",
+            message: "CNPJ deve conter 14 caracteres, entre letras e números",
           });
         }
 
@@ -332,11 +330,7 @@ export class PessoaController {
       // CRIAÇÃO
       // =========================
 
-      const novo = await this._service.criar(
-        nome,
-        tipoFormatado,
-        infoExtra
-      );
+      const novo = await this._service.criar(nome, tipoFormatado, infoExtra);
 
       return res.status(201).json({
         message: "Pessoa criada com sucesso",
@@ -426,13 +420,9 @@ export class PessoaController {
           });
         }
 
-        if (
-          cnpj &&
-          !/^[A-Z0-9]{14}$/.test(cnpj.toUpperCase())
-        ) {
+        if (cnpj && !/^[A-Z0-9]{14}$/.test(cnpj.toUpperCase())) {
           return res.status(400).json({
-            message:
-              "CNPJ deve conter 14 caracteres, entre letras e números",
+            message: "CNPJ deve conter 14 caracteres, entre letras e números",
           });
         }
 
@@ -452,11 +442,7 @@ export class PessoaController {
         }
       }
 
-      await this._service.editar(
-        Number(id),
-        nome,
-        infoExtra
-      );
+      await this._service.editar(Number(id), nome, infoExtra);
 
       return res.status(200).json({
         message: "Pessoa atualizada com sucesso",
