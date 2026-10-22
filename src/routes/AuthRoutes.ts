@@ -14,7 +14,11 @@ authRoutes.post("/logout", authController.logout);
 authRoutes.get("/me", authMiddleware.authenticate, authController.me);
 authRoutes.get("/rotaProtegida", authMiddleware.authenticate, authController.rotaProtegida);
 authRoutes.post("/forgot-password", authController.forgotPassword);
-authRoutes.post("/reset-password", authController.resetPassword);
+authRoutes.post(
+    "/reset-password",
+    authController.resetPassword
+);
+authRoutes.post("/auth/google", authController.googleLogin);
 
 export default authRoutes;
 

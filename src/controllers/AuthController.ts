@@ -5,6 +5,11 @@ import { LoginRepository } from "../repository/LoginRepository";
 import { JwtService } from "../utils/JwtService";
 import { RecuperacaoSenhaService } from "../services/recuperacaoSenha.service";
 
+import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -115,6 +120,69 @@ export class AuthController {
       });
     }
   };
+
+  // ====================
+  // LOGIN COM O GOOGLE
+  // ====================
+
+  googleLogin = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Token do Google é obrigatório" });
+    }
+
+    // 1. Valida o token com o Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const google = ticket.getPayload();
+
+    if (!google?.email || !google.email_verified) {
+      return res.status(401).json({ message: "E-mail do Google não verificado" });
+    }
+
+    // 2. Procura o usuário pelo e-mail; se não existir, cria
+    let user = await this.loginRepo.findByEmail(google.email);
+
+    if (!user) {
+      // senha aleatória: quem entra só pelo Google nunca usa senha
+      const senhaAleatoria = crypto.randomBytes(32).toString("hex");
+      const password_hash = await bcrypt.hash(senhaAleatoria, this.bcryptRounds);
+
+      user = await this.loginRepo.createFromGoogle({
+        nome: (google.name ?? google.email.split("@")[0]).slice(0, 150),
+        email: google.email,
+        password_hash,
+      });
+    }
+
+    // 3. Daqui para baixo é igual ao login normal
+    const payload = {
+      login_id: user.id_pessoa_login!,
+      username: user.username,
+      tipo: user.tipo,
+    };
+
+    const accessToken = this.jwtService.gerarTokenAcesso(payload);
+    const refreshToken = this.jwtService.gerarRefreshToken(payload);
+
+    res.cookie("accessToken", accessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
+    res.cookie("refreshToken", refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+
+    return res.status(200).json({
+      message: "Login realizado com sucesso",
+      user: { id_pessoa_login: user.id_pessoa_login, username: user.username },
+      token_acesso: accessToken,
+      refresh_token: refreshToken,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(401).json({ message: "Token do Google inválido" });
+  }
+};
 
   // =========================
   // ME
