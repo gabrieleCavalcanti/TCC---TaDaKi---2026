@@ -18,7 +18,7 @@ authRoutes.post(
     "/reset-password",
     authController.resetPassword
 );
-authRoutes.post("/auth/google", authController.googleLogin);
+authRoutes.post("/google", authController.googleLogin);
 
 export default authRoutes;
 
