@@ -9,6 +9,7 @@ import likeRoutes from "./like.routes";
 import pessoaRoutes from "./pessoa.routes";
 import postRoutes from "./post.routes";
 import authRoutes from "./AuthRoutes";
+import dashboardRoutes from "./dashboard.routes";
 // import { EmailService } from "../services/email.service";
 
 
@@ -39,6 +40,7 @@ const router = Router();
 // });
 
 router.use("/auth", authRoutes);
+router.use("/", dashboardRoutes);
 
 router.use('/', areaAtuacaoRoutes);
 router.use('/', avaliacaoRoutes);

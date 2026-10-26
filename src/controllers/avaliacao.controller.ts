@@ -35,7 +35,7 @@ export class AvaliacaoController {
             const resultadoOrg = await this._service.selecionaIdOrg(id_organizacao)
 
             if (resultadoCliente.length === 0 || resultadoOrg.length === 0) {
-                return res.status(200).json({ message: 'Não há dados com algum dos id pesquisados' })
+                return res.status(404).json({ message: 'Cliente ou organização não encontrado(a)' })
             }
 
             const novoRegistro = await this._service.criar(comentario, titulo, anonimo, csat, id_cliente, id_organizacao);
@@ -49,6 +49,46 @@ export class AvaliacaoController {
             res.status(500).json({ message: 'Ocorreu um erro no servidor', errorMessage: 'Erro desconhecido' })
         }
     }
+    editar = async (req: Request, res: Response) => {
+        try {
+            const { id_avaliacao } = req.params;
+            const { comentario, titulo, anonimo, csat, id_cliente, id_organizacao } = req.body;
+
+            if (!id_avaliacao || isNaN(Number(id_avaliacao)) || !comentario || !titulo || !id_cliente || !id_organizacao || isNaN(id_cliente) || isNaN(id_organizacao)) {
+                return res.status(400).json({ message: 'Verifique os dados e tente novamente' });
+            }
+
+            if (anonimo !== 1 && anonimo !== 0 && anonimo !== true && anonimo !== false) {
+                return res.status(400).json({ message: 'Valor inválido. Digite 1 para avaliação anônima ou 0 para avaliação identificada' });
+            }
+
+            if (!csat || csat < 1 || csat > 5) {
+                return res.status(400).json({ message: 'Sua avaliação deve ser um número entre 1 e 5.' });
+            }
+
+            const resultadoCliente = await this._service.selecionaIdCliente(id_cliente);
+            const resultadoOrg = await this._service.selecionaIdOrg(id_organizacao);
+
+            if (resultadoCliente.length === 0 || resultadoOrg.length === 0) {
+                return res.status(404).json({ message: 'Não há dados com algum dos IDs pesquisados' });
+            }
+
+            const resultado = await this._service.editar(Number(id_avaliacao), comentario, titulo, Boolean(anonimo), csat, id_cliente, id_organizacao);
+
+            if (resultado.affectedRows === 0) {
+                return res.status(404).json({ message: 'Avaliação não encontrada para edição.' });
+            }
+
+            return res.status(200).json({ message: 'Avaliação atualizada com sucesso!', resultado });
+
+        } catch (error: unknown) {
+            console.error(error);
+            if (error instanceof Error) {
+                return res.status(500).json({ message: 'Ocorreu um erro no servidor', errorMessage: error.message });
+            }
+            return res.status(500).json({ message: 'Ocorreu um erro no servidor', errorMessage: 'Erro desconhecido' });
+        }
+    };
 
     deletar = async (req: Request, res: Response) => {
         try {

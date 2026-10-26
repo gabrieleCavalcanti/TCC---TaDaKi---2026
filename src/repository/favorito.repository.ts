@@ -8,15 +8,11 @@ export class FavoritoRepository {
 
     async findAll(): Promise<IFavorito[]> {
         const [rows] = await db.execute<IFavorito[]>(
-            `SELECT 
-                f.id_favorito,
-                c.nome AS nome_cliente,
-                o.nome AS nome_organizacao
-            FROM favoritos f
-            INNER JOIN Pessoas c 
-                ON f.id_cliente = c.id_pessoa
-            INNER JOIN Pessoas o 
-                ON f.id_organizacao = o.id_pessoa;`
+            `SELECT
+            f.id_favorito,
+            f.id_cliente,
+            f.id_organizacao
+        FROM favoritos f`
         );
         return rows;
     }
@@ -28,14 +24,14 @@ export class FavoritoRepository {
         return rows;
     }
     async selectByIdCliente(id_cliente: number): Promise<ICliente[]> {
-        const sql = ` SELECT * FROM clientes WHERE id_cliente = ?;`;
+        const sql = ` SELECT * FROM favoritos WHERE id_cliente = ?;`;
         const values = [id_cliente];
         const [rows] = await db.execute<ICliente[]>(sql, values);
         return rows;
     }
 
     async selectByIdOrganizacao(id_organizacao: number): Promise<IOrganizacao[]> {
-        const sql = ` SELECT * FROM organizacao WHERE id_organizacao = ?; `;
+        const sql = ` SELECT * FROM favoritos WHERE id_organizacao = ?; `;
         const values = [id_organizacao];
         const [rows] = await db.execute<IOrganizacao[]>(sql, values);
         return rows;

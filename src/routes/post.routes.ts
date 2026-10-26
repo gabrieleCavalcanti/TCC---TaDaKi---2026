@@ -10,10 +10,17 @@ const postRoutes = Router();
 const controller = new PostController();
 const authMiddleware = new AuthMiddleware();
 
+postRoutes.get(
+    "/posts/arquivados",
+    authMiddleware.authenticate,
+    verificarOrganizacao,
+    controller.selecionaArquivadosByOrganizacao
+);
 postRoutes.get("/posts", authMiddleware.authenticate, controller.selecionarTodos);
 postRoutes.post("/posts",authMiddleware.authenticate,verificarOrganizacao, uploadImage,controller.criar,);
 postRoutes.put("/posts", authMiddleware.authenticate, verificarOrganizacao, uploadImage, controller.editar,);
 postRoutes.delete("/posts",authMiddleware.authenticate,verificarOrganizacao,controller.arquivar,);
+postRoutes.patch( "/posts/desarquivar", authMiddleware.authenticate, verificarOrganizacao, controller.desarquivar );
 postRoutes.get("/posts/id", authMiddleware.authenticate, controller.selecionaById);
 postRoutes.get("/posts/categoria", authMiddleware.authenticate, controller.selecionaByCategoria);
 postRoutes.get("/posts/organizacao", authMiddleware.authenticate, controller.selecionaByOrganizacao);

@@ -158,13 +158,13 @@ export class PessoaRepository {
                 VALUES (?, ?, ?, ?, ?);
             `;
 
-        await connection.execute<ResultSetHeader>(sqlOrganizacao, [
-          infoExtra.cpf,
-          infoExtra.cnpj,
-          infoExtra.data_criacao,
-          id_pessoa,
-          infoExtra.id_area_atuacao,
-        ]);
+await connection.execute<ResultSetHeader>(sqlOrganizacao, [
+  infoExtra.cpf?.trim() || null,
+  infoExtra.cnpj?.trim().toUpperCase() || null,
+  infoExtra.data_criacao,
+  id_pessoa,
+  infoExtra.id_area_atuacao,
+]);
       }
 
       // =========================
@@ -217,11 +217,11 @@ export class PessoaRepository {
             VALUES (?, ?, ?);
         `;
 
-      await connection.execute<ResultSetHeader>(sqlContato, [
-        infoExtra.telefone,
-        infoExtra.email,
-        id_pessoa,
-      ]);
+await connection.execute<ResultSetHeader>(sqlContato, [
+  infoExtra.telefone ?? null,
+  infoExtra.email,
+  id_pessoa,
+]);
 
       await connection.commit();
     } catch (error) {

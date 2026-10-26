@@ -16,7 +16,7 @@ export class JwtService {
 
     constructor() {
         this.secret = process.env.JWT_SECRET || "default_secret";
-        this.expirestIn = process.env.JWT_EXPIRES_IN || "1m";
+        this.expirestIn = process.env.JWT_EXPIRES_IN || "5m";
 
         this.refreshSecret =
             process.env.JWT_REFRESH_SECRET || "default_refresh_secret";

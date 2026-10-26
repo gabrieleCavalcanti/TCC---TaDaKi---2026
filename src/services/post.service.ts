@@ -5,14 +5,27 @@ export class PostService {
 
     constructor(
         private _repository = new PostRepository()
-    ) {}
+    ) { }
 
 
     async selecionarTodos() {
 
         return await this._repository.findAll();
     }
+async selecionaArquivadosByOrganizacao(
+    id_organizacao: number
+) {
+    if (
+        !Number.isSafeInteger(id_organizacao) ||
+        id_organizacao <= 0
+    ) {
+        throw new Error("ID da organização inválido");
+    }
 
+    return await this._repository.findArquivadosByOrganizacao(
+        id_organizacao
+    );
+}
 
     async criar(
         vincularImagem: string,
@@ -132,7 +145,24 @@ export class PostService {
             id_post
         );
     }
+    async desarquivar(
+        id_post: number,
+        id_organizacao: number
+    ) {
+        if (
+            !Number.isSafeInteger(id_post) ||
+            id_post <= 0 ||
+            !Number.isSafeInteger(id_organizacao) ||
+            id_organizacao <= 0
+        ) {
+            throw new Error("IDs inválidos.");
+        }
 
+        return await this._repository.desarquivar(
+            id_post,
+            id_organizacao
+        );
+    }
 
     async selecionaById(
         id_post: number

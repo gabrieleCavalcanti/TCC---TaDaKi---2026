@@ -20,7 +20,10 @@ export class AvaliacaoService {
         const avaliacao = Avaliacao.criar(comentario, titulo, csat, id_cliente, id_organizacao, anonimo);
         return await this._repository.create(avaliacao)
     }
-
+    async editar(id_avaliacao: number, comentario: string, titulo: string, anonimo: boolean, csat: number, id_cliente: number, id_organizacao: number) {
+        const avaliacao = Avaliacao.criar(comentario, titulo, csat, id_cliente, id_organizacao, anonimo);
+        return await this._repository.update(id_avaliacao, avaliacao);
+    }
     async deletar(id_avaliacao: number) {
         return await this._repository.delete(id_avaliacao);
     }
