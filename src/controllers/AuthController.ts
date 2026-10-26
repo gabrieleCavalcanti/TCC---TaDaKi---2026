@@ -37,11 +37,7 @@ export class AuthController {
     try {
       const { username, password } = req.body;
 
-      if (
-        !username ||
-        typeof username !== "string" ||
-        username.trim() === ""
-      ) {
+      if (!username || typeof username !== "string" || username.trim() === "") {
         return res.status(400).json({
           message: "Username é obrigatório",
         });
@@ -61,10 +57,7 @@ export class AuthController {
         });
       }
 
-      const passwordMatch = await bcrypt.compare(
-        password,
-        user.password_hash
-      );
+      const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
       if (!passwordMatch) {
         return res.status(401).json({
@@ -126,63 +119,79 @@ export class AuthController {
   // ====================
 
   googleLogin = async (req: Request, res: Response) => {
-  try {
-    const { token } = req.body;
+    try {
+      const { token } = req.body;
 
-    if (!token || typeof token !== "string") {
-      return res.status(400).json({ message: "Token do Google é obrigatório" });
-    }
+      if (!token || typeof token !== "string") {
+        return res
+          .status(400)
+          .json({ message: "Token do Google é obrigatório" });
+      }
 
-    // 1. Valida o token com o Google
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const google = ticket.getPayload();
-
-    if (!google?.email || !google.email_verified) {
-      return res.status(401).json({ message: "E-mail do Google não verificado" });
-    }
-
-    // 2. Procura o usuário pelo e-mail; se não existir, cria
-    let user = await this.loginRepo.findByEmail(google.email);
-
-    if (!user) {
-      // senha aleatória: quem entra só pelo Google nunca usa senha
-      const senhaAleatoria = crypto.randomBytes(32).toString("hex");
-      const password_hash = await bcrypt.hash(senhaAleatoria, this.bcryptRounds);
-
-      user = await this.loginRepo.createFromGoogle({
-        nome: (google.name ?? google.email.split("@")[0]).slice(0, 150),
-        email: google.email,
-        password_hash,
+      // 1. Valida o token com o Google
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
+      const google = ticket.getPayload();
+
+      if (!google?.email || !google.email_verified) {
+        return res
+          .status(401)
+          .json({ message: "E-mail do Google não verificado" });
+      }
+
+      // 2. Procura o usuário pelo e-mail; se não existir, cria
+      let user = await this.loginRepo.findByEmail(google.email);
+
+      if (!user) {
+        // senha aleatória: quem entra só pelo Google nunca usa senha
+        const senhaAleatoria = crypto.randomBytes(32).toString("hex");
+        const password_hash = await bcrypt.hash(
+          senhaAleatoria,
+          this.bcryptRounds,
+        );
+
+        user = await this.loginRepo.createFromGoogle({
+          nome: (google.name ?? google.email.split("@")[0]).slice(0, 150),
+          email: google.email,
+          password_hash,
+        });
+      }
+
+      // 3. Daqui para baixo é igual ao login normal
+      const payload = {
+        login_id: user.id_pessoa_login!,
+        username: user.username,
+        tipo: user.tipo,
+      };
+
+      const accessToken = this.jwtService.gerarTokenAcesso(payload);
+      const refreshToken = this.jwtService.gerarRefreshToken(payload);
+
+      res.cookie("accessToken", accessToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: 15 * 60 * 1000,
+      });
+      res.cookie("refreshToken", refreshToken, {
+        ...COOKIE_OPTIONS,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.status(200).json({
+        message: "Login realizado com sucesso",
+        user: {
+          id_pessoa_login: user.id_pessoa_login,
+          username: user.username,
+        },
+        token_acesso: accessToken,
+        refresh_token: refreshToken,
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(401).json({ message: "Token do Google inválido" });
     }
-
-    // 3. Daqui para baixo é igual ao login normal
-    const payload = {
-      login_id: user.id_pessoa_login!,
-      username: user.username,
-      tipo: user.tipo,
-    };
-
-    const accessToken = this.jwtService.gerarTokenAcesso(payload);
-    const refreshToken = this.jwtService.gerarRefreshToken(payload);
-
-    res.cookie("accessToken", accessToken, { ...COOKIE_OPTIONS, maxAge: 15 * 60 * 1000 });
-    res.cookie("refreshToken", refreshToken, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
-
-    return res.status(200).json({
-      message: "Login realizado com sucesso",
-      user: { id_pessoa_login: user.id_pessoa_login, username: user.username },
-      token_acesso: accessToken,
-      refresh_token: refreshToken,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(401).json({ message: "Token do Google inválido" });
-  }
-};
+  };
 
   // =========================
   // ME
@@ -235,8 +244,7 @@ export class AuthController {
 
   refresh = async (req: Request, res: Response) => {
     try {
-      const refreshToken =
-        req.cookies?.refreshToken || req.body?.refreshToken;
+      const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
       if (!refreshToken) {
         return res.status(401).json({

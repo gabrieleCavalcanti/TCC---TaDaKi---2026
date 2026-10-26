@@ -174,6 +174,36 @@ export class PessoaController {
       // EMAIL E TELEFONE
       // =========================
 
+      // if (!infoExtra.email || !infoExtra.telefone) {
+      //   return res.status(400).json({
+      //     message: "E-mail e telefone são obrigatórios",
+      //   });
+      // }
+
+      // // Limpa caracteres do telefone
+      // const telefone = String(infoExtra.telefone).replace(/\D/g, "");
+
+      // // Telefone com DDD: 10 ou 11 dígitos
+      // if (!/^\d{10,11}$/.test(telefone)) {
+      //   return res.status(400).json({
+      //     message: "Telefone inválido",
+      //   });
+      // }
+
+      // // Validação básica do e-mail
+      // const email = String(infoExtra.email)
+      //   .trim()
+      //   .toLowerCase();
+
+      // if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      //   return res.status(400).json({
+      //     message: "E-mail inválido",
+      //   });
+      // }
+
+      // infoExtra.telefone = telefone;
+      // infoExtra.email = email;
+
       if (!infoExtra.email) {
         return res.status(400).json({
           message: "E-mail é obrigatório",
@@ -191,18 +221,9 @@ export class PessoaController {
 
       infoExtra.email = email;
 
-      // Telefone: obrigatório apenas para ORGANIZACAO
-      if (tipoFormatado === "ORGANIZACAO") {
-        if (!infoExtra.telefone) {
-          return res.status(400).json({
-            message: "Telefone é obrigatório para organização",
-          });
-        }
-
-        // Limpa caracteres do telefone
+      if (infoExtra.telefone) {
         const telefone = String(infoExtra.telefone).replace(/\D/g, "");
 
-        // Telefone com DDD: 10 ou 11 dígitos
         if (!/^\d{10,11}$/.test(telefone)) {
           return res.status(400).json({
             message: "Telefone inválido",
@@ -211,8 +232,7 @@ export class PessoaController {
 
         infoExtra.telefone = telefone;
       } else {
-        // CLIENTE: telefone não é mais pedido, então descarta qualquer valor enviado
-        delete infoExtra.telefone;
+        infoExtra.telefone = null; 
       }
 
       // =========================
@@ -306,6 +326,12 @@ export class PessoaController {
         if (cnpj && !/^[A-Z0-9]{14}$/.test(cnpj.toUpperCase())) {
           return res.status(400).json({
             message: "CNPJ deve conter 14 caracteres, entre letras e números",
+          });
+        }
+
+        if (!infoExtra.telefone) {
+          return res.status(400).json({
+            message: "Telefone é obrigatório para organizações",
           });
         }
 
