@@ -58,6 +58,7 @@ export class LoginRepository {
     nome: string;
     email: string;
     password_hash: string;
+    tipo: "CLIENTE" | "ORGANIZACAO";
   }): Promise<ILogin> {
     const conn = await db.getConnection();
 
@@ -66,8 +67,8 @@ export class LoginRepository {
 
       // 1. Cria a pessoa (quem entra pelo Google começa como CLIENTE)
       const [pessoa] = await conn.query<ResultSetHeader>(
-        `INSERT INTO pessoas (nome, tipo) VALUES (?, 'CLIENTE');`,
-        [dados.nome],
+        `INSERT INTO pessoas (nome, tipo) VALUES (?, ?);`,
+        [dados.nome, dados.tipo],
       );
       const idPessoa = pessoa.insertId;
 
@@ -114,6 +115,28 @@ export class LoginRepository {
     } finally {
       conn.release();
     }
+  }
+
+  async findByEmailAndTipo(
+    email: string,
+    tipo: "CLIENTE" | "ORGANIZACAO",
+  ): Promise<ILogin | null> {
+    const [rows] = await db.query<RowDataPacket[]>(
+      `SELECT
+        login.*,
+        pessoas.tipo,
+        contatos.email
+     FROM login
+     INNER JOIN pessoas
+        ON pessoas.id_pessoa = login.id_pessoa_login
+     INNER JOIN contatos
+        ON contatos.id_pessoa = pessoas.id_pessoa
+     WHERE contatos.email = ? AND pessoas.tipo = ?
+     LIMIT 1;`,
+      [email, tipo],
+    );
+
+    return rows.length > 0 ? (rows[0] as ILogin) : null;
   }
 
   async atualizarSenha(
